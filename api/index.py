@@ -5,10 +5,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import os
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="../templates")
 
 # Path ke warehouse.csv
-csv_path = os.path.join(os.path.dirname(__file__), "warehouse.csv")
+csv_path = os.path.join(os.path.dirname(__file__), "../warehouse.csv")
 data = pd.read_csv(csv_path)
 
 selected_columns = ['Weight', 'Length1', 'Length2', 'Length3', 'Height', 'Width']
@@ -65,3 +65,4 @@ def index():
 
 # Handler untuk Vercel
 handler = app
+
