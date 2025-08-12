@@ -5,11 +5,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import os
 
-app = Flask(__name__, template_folder="../templates")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CSV_PATH = os.path.join(BASE_DIR, "warehouse.csv")
+TEMPLATE_PATH = os.path.join(BASE_DIR, "templates")
 
-# Path ke warehouse.csv
-csv_path = os.path.join(os.path.dirname(__file__), "../warehouse.csv")
-data = pd.read_csv(csv_path)
+app = Flask(__name__, template_folder=TEMPLATE_PATH)
+
+# Cek apakah file CSV ada
+if not os.path.exists(CSV_PATH):
+    raise FileNotFoundError(f"File CSV tidak ditemukan di path: {CSV_PATH}")
+
+data = pd.read_csv(CSV_PATH)
 
 selected_columns = ['Weight', 'Length1', 'Length2', 'Length3', 'Height', 'Width']
 missing_columns = set(selected_columns) - set(data.columns)
@@ -63,6 +69,4 @@ def index():
 
     return render_template('index.html', prediction=prediction, error_message=error_message)
 
-# Handler untuk Vercel
 handler = app
-
