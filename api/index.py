@@ -1,35 +1,30 @@
-from app import app as handler
 from flask import Flask, render_template, request
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
-# Membaca dataset dari file CSV
-data = pd.read_csv('warehouse.csv')
+# Path ke warehouse.csv
+csv_path = os.path.join(os.path.dirname(__file__), "warehouse.csv")
+data = pd.read_csv(csv_path)
 
-# Memeriksa apakah atribut yang dipilih ada dalam dataset
 selected_columns = ['Weight', 'Length1', 'Length2', 'Length3', 'Height', 'Width']
 missing_columns = set(selected_columns) - set(data.columns)
 if missing_columns:
-    print(f"Kesalahan: Kolom berikut tidak ada dalam dataset: {', '.join(missing_columns)}")
-    exit(1)
+    raise Exception(f"Kolom berikut tidak ada dalam dataset: {', '.join(missing_columns)}")
 
-# Memisahkan atribut dan target
 X = data[selected_columns]
 y = data['Species']
 
-# Mengisi nilai yang hilang dengan nilai rata-rata
 imputer = SimpleImputer(strategy='mean')
 X_imputed = imputer.fit_transform(X)
 
-# Normalisasi atribut menggunakan StandardScaler
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_imputed)
 
-# Membangun model Random Forest
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
 rf.fit(X_scaled, y)
 
@@ -47,7 +42,6 @@ def index():
             height = float(request.form['height'])
             width = float(request.form['width'])
 
-            # Check if input values are within the range of the dataset
             if (
                 weight < X['Weight'].min() or weight > X['Weight'].max() or
                 length1 < X['Length1'].min() or length1 > X['Length1'].max() or
@@ -58,23 +52,16 @@ def index():
             ):
                 error_message = "Kesalahan : Input morfometrik melebihi rentang yang diharapkan."
             else:
-                # Menggunakan imputer yang sama untuk mengisi nilai yang hilang pada input
                 input_data = [[weight, length1, length2, length3, height, width]]
                 input_data_imputed = imputer.transform(input_data)
-
-                # Normalisasi input menggunakan StandardScaler yang sama
                 input_data_scaled = scaler.transform(input_data_imputed)
-
-                # Memprediksi spesies ikan berdasarkan inputan pengguna
                 prediction = rf.predict(input_data_scaled)
-                prediction = prediction[0]  # Ambil elemen pertama dari array prediksi
-
-                # Menghilangkan tanda ' ' dan []
-                prediction = prediction.strip("'")
-                prediction = prediction.strip("[]")
-
+                prediction = prediction[0]
+                prediction = prediction.strip("'").strip("[]")
         except ValueError:
             error_message = "Kesalahan: Pastikan input morfometrik berupa angka yang valid."
 
     return render_template('index.html', prediction=prediction, error_message=error_message)
 
+# Handler untuk Vercel
+handler = app
